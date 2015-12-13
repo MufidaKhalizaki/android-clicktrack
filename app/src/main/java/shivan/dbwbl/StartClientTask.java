@@ -24,6 +24,7 @@ public class StartClientTask extends AsyncTask<TaskConfig, Void, Void> implement
 
     protected Void doInBackground(TaskConfig... params) {
         Log.d("NET", "Starting client - connecting to " + mConfig.getServerIP());
+        mConfig.setStatus("Connecting to server...");
 
         try {
             InetAddress serverAddress = InetAddress.getByName(mConfig.getServerIP());
@@ -37,6 +38,8 @@ public class StartClientTask extends AsyncTask<TaskConfig, Void, Void> implement
             out.newLine();
             out.flush();
 
+            mConfig.setStatus("Conntected");
+            
             while (!Thread.currentThread().isInterrupted() && !isCancelled()) {
                 try {
                     String message = input.readLine();
@@ -61,9 +64,11 @@ public class StartClientTask extends AsyncTask<TaskConfig, Void, Void> implement
                         out.write("SYNC");
                         out.newLine();
                         out.flush();
+                        mConfig.setStatus("Playing");
                     } else if(message.equals("STOP")) {
                         mPlayer.pause();
                         Log.d("LIVE", "song stopped");
+                        mConfig.setStatus("Stopped");
                     } else {
                         // Must be a sync number
                         int localPosition = mPlayer.getCurrentPosition();
