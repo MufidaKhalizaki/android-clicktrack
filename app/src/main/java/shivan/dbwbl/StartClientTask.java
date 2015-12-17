@@ -25,6 +25,7 @@ public class StartClientTask extends AsyncTask<TaskConfig, Void, Void> implement
     public void play() {
         mPlayer.start();
         Log.d("LIVE", "song started");
+
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -100,11 +101,12 @@ public class StartClientTask extends AsyncTask<TaskConfig, Void, Void> implement
                         int remotePosition = Integer.valueOf(message);
                         int diff = remotePosition - localPosition;
                         Log.d("LIVE", "local player: " + localPosition + ", server: " + remotePosition + ", d="+diff);
+                        Log.d("LIVE", "latency: " + mConfig.getLatency());
 
-                        if(Math.abs(diff) > 10) {
-                            mPlayer.seekTo(remotePosition + mConfig.getLatency());
+                        if(Math.abs(diff) > 15) {
+                            mPlayer.seekTo(localPosition + diff + mConfig.getLatency());
 
-                            Thread.sleep(2000);
+                            Thread.sleep(1000);
 
                             out.write("SYNC");
                             out.newLine();

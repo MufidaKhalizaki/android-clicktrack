@@ -30,7 +30,6 @@ public class TaskConfig {
     public String getServerIP() { return mServerIP; }
     public int getLatency() { return mLatency; }
 
-
     public void setClientsText(final String clientsText) {
         ((MainActivity) getContext()).runOnUiThread(new Runnable() {
             @Override

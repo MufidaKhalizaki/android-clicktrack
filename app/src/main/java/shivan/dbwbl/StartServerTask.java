@@ -74,6 +74,7 @@ public class StartServerTask extends AsyncTask<TaskConfig, Void, Void> implement
         return mPlayer.isPlaying();
     }
 
+
     class CommunicationThread implements Runnable {
         private Socket mSocket;
         private BufferedReader mInput;
@@ -87,6 +88,10 @@ public class StartServerTask extends AsyncTask<TaskConfig, Void, Void> implement
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+
+        public Socket getSocket() {
+            return mSocket;
         }
 
         public void close() {
@@ -177,7 +182,7 @@ public class StartServerTask extends AsyncTask<TaskConfig, Void, Void> implement
                             out.flush();
                         }
                     } else if (message.equals("PONG")) {
-                        if(numberOfPings < 8) {
+                        if(numberOfPings < 12) {
                             t1 = System.currentTimeMillis();
                             dt = (t1 - t0);
                             pings.add(dt);
@@ -200,6 +205,7 @@ public class StartServerTask extends AsyncTask<TaskConfig, Void, Void> implement
                             mAveragePing /= pings.size();
                             Log.d("NET", "average: " + mAveragePing);
                             mConfig.setStatus("Average latency: " + mAveragePing + "ms");
+                            updateClientsText();
                         }
                     }
                 } catch (IOException e) {
@@ -211,8 +217,16 @@ public class StartServerTask extends AsyncTask<TaskConfig, Void, Void> implement
 
             Log.d("NET", "communication thread shutting down...");
             mCommunicationThreads.remove(this);
-            mConfig.setClientsText("" + mCommunicationThreads.size());
+            updateClientsText();
         }
+    }
+
+    public void updateClientsText() {
+        String status = "";
+        for(CommunicationThread c : mCommunicationThreads)
+            status = c.getSocket().getRemoteSocketAddress() + " - " + c.getAveragePing() + "ms\n";
+
+        mConfig.setClientsText(status);
     }
 
     protected Void doInBackground(TaskConfig... params) {
@@ -235,7 +249,7 @@ public class StartServerTask extends AsyncTask<TaskConfig, Void, Void> implement
                     new Thread(commThread).start();
                     mCommunicationThreads.add(commThread);
 
-                   mConfig.setClientsText("" + mCommunicationThreads.size());
+                    updateClientsText();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -260,7 +274,7 @@ public class StartServerTask extends AsyncTask<TaskConfig, Void, Void> implement
             Log.d("LIVE", "closing server");
 
             mConfig.setStatus("Stopped");
-            mConfig.setClientsText("None");
+            updateClientsText();
 
             mPlayer.stop();
 
