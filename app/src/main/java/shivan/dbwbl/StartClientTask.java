@@ -112,7 +112,8 @@ public class StartClientTask extends AsyncTask<TaskConfig, Void, Void> implement
 
     public void close() {
         try {
-            mSocket.close();
+            if(mSocket != null)
+                mSocket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }

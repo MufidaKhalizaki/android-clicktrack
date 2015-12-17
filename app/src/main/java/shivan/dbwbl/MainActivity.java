@@ -28,24 +28,12 @@ public class MainActivity extends AppCompatActivity {
         final EditText ipEditText = (EditText) findViewById(R.id.ipEditText);
         final EditText latencyEditText = (EditText) findViewById(R.id.latencyEditText);
         final Button startServerButton = (Button) findViewById(R.id.startServerButton);
-        final Button okayButton = (Button) findViewById(R.id.okay_button);
-        final Button stopButton = (Button) findViewById(R.id.stop_button);
+        final Button stopServerButton = (Button) findViewById(R.id.stopServerButton);
+        final Button connectButton = (Button) findViewById(R.id.okay_button);
+        final Button disconnectButton = (Button) findViewById(R.id.stop_button);
 
         ipEditText.setText(settings.getString("SERVER_IP", ""));
         latencyEditText.setText(Integer.toString(settings.getInt("LATENCY", 250)));
-
-        startServerButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                TaskConfig config = new TaskConfig(
-                        MainActivity.this, ipEditText.getText().toString(), Integer.valueOf(latencyEditText.getText().toString())
-                );
-
-                MainActivity.task = new StartServerTask(config);
-                task.execute();
-                mIsServer = true;
-            }
-        });
 
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -65,7 +53,35 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        okayButton.setOnClickListener(new View.OnClickListener() {
+        startServerButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                TaskConfig config = new TaskConfig(
+                        MainActivity.this, ipEditText.getText().toString(), Integer.valueOf(latencyEditText.getText().toString())
+                );
+
+                MainActivity.task = new StartServerTask(config);
+                task.execute();
+                mIsServer = true;
+                startServerButton.setEnabled(false);
+                stopServerButton.setEnabled(true);
+                connectButton.setEnabled(false);
+            }
+        });
+
+        stopServerButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                StartServerTask server = ((StartServerTask) task);
+                server.stop();
+                fab.setImageDrawable(getResources().getDrawable(android.R.drawable.ic_media_play));
+                startServerButton.setEnabled(true);
+                connectButton.setEnabled(true);
+                mIsServer = false;
+            }
+        });
+
+        connectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 SharedPreferences.Editor editor = settings.edit();
@@ -80,15 +96,23 @@ public class MainActivity extends AppCompatActivity {
                 MainActivity.task = new StartClientTask(config);
                 task.execute();
                 mIsServer = false;
+                connectButton.setEnabled(false);
+                disconnectButton.setEnabled(true);
+                startServerButton.setEnabled(false);
             }
         });
 
-        stopButton.setOnClickListener(new View.OnClickListener() {
+        disconnectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Log.d("LIVE", "onClick: cancelling");
-                task.cancel(true);
-                ((IClosable) task).close();
+                if(!mIsServer) {
+                    task.cancel(true);
+                    ((IClosable) task).close();
+                    connectButton.setEnabled(true);
+                    startServerButton.setEnabled(true);
+                    disconnectButton.setEnabled(false);
+                }
             }
         });
     }
