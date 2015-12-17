@@ -16,14 +16,12 @@ import java.util.ArrayList;
 public class StartServerTask extends AsyncTask<TaskConfig, Void, Void> implements IClosable {
     private TaskConfig mConfig;
     private MediaPlayer mPlayer;
-    private ArrayList<Thread> mThreads;
     private ArrayList<CommunicationThread> mCommunicationThreads;
     private ServerSocket mServerSocket;
 
     public StartServerTask(TaskConfig config) {
         mConfig = config;
         mPlayer = MediaPlayer.create(mConfig.getContext(), R.raw.click);
-        mThreads = new ArrayList<>();
         mCommunicationThreads = new ArrayList<>();
     }
 
@@ -69,6 +67,14 @@ public class StartServerTask extends AsyncTask<TaskConfig, Void, Void> implement
 
             try {
                 mInput = new BufferedReader(new InputStreamReader(mSocket.getInputStream()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public void close() {
+            try {
+                mSocket.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -121,7 +127,7 @@ public class StartServerTask extends AsyncTask<TaskConfig, Void, Void> implement
 
             mConfig.setStatus("Calibrating latency...");
 
-            while (!Thread.currentThread().isInterrupted() && !isCancelled()) {
+            while (!Thread.currentThread().isInterrupted() && mSocket.isConnected()) {
                 try {
                     String message = mInput.readLine();
 
@@ -187,6 +193,8 @@ public class StartServerTask extends AsyncTask<TaskConfig, Void, Void> implement
             }
 
             Log.d("NET", "communication thread shutting down...");
+            mCommunicationThreads.remove(this);
+            mConfig.setClientsText("" + mCommunicationThreads.size());
         }
     }
 
@@ -207,12 +215,10 @@ public class StartServerTask extends AsyncTask<TaskConfig, Void, Void> implement
                     Log.d("NET", "new socket accepted: " + socket.getRemoteSocketAddress());
 
                     CommunicationThread commThread = new CommunicationThread(socket);
-                    Thread th = new Thread(commThread);
-                    mThreads.add(th);
+                    new Thread(commThread).start();
                     mCommunicationThreads.add(commThread);
-                    th.start();
 
-                   mConfig.setClientsText("" + mThreads.size());
+                   mConfig.setClientsText("" + mCommunicationThreads.size());
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -229,21 +235,20 @@ public class StartServerTask extends AsyncTask<TaskConfig, Void, Void> implement
     @Override
     protected void onCancelled() {
         super.onCancelled();
-
-        Log.d("LIVE", "onCancelled: ");
-
-        mConfig.setStatus("Stopped");
-        mConfig.setClientsText("None");
-
-        mPlayer.stop();
-
-        for(Thread t : mThreads)
-            t.interrupt();
     }
 
     @Override
     public void close() {
         try {
+            Log.d("LIVE", "closing server");
+
+            mConfig.setStatus("Stopped");
+            mConfig.setClientsText("None");
+
+            mPlayer.stop();
+
+            for(CommunicationThread c : mCommunicationThreads)
+                c.close();
             mServerSocket.close();
         } catch (IOException e) {
             e.printStackTrace();
