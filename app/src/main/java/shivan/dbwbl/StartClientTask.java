@@ -22,6 +22,32 @@ public class StartClientTask extends AsyncTask<TaskConfig, Void, Void> implement
         mPlayer = MediaPlayer.create(mConfig.getContext(), R.raw.click);
     }
 
+    public void play() {
+        mPlayer.start();
+        Log.d("LIVE", "song started");
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while(mPlayer.isPlaying()) {
+                    mConfig.setProgress(mPlayer.getCurrentPosition(), mPlayer.getDuration());
+
+                    try {
+                        Thread.sleep(200);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                Log.d("UI", "run: stop update progress thread");
+            }
+        }).start();
+    }
+
+    public void stop() {
+        mPlayer.pause();
+        Log.d("LIVE", "song started");
+    }
+
     protected Void doInBackground(TaskConfig... params) {
         Log.d("NET", "Starting client - connecting to " + mConfig.getServerIP());
         mConfig.setStatus("Connecting to server...");
@@ -56,8 +82,7 @@ public class StartClientTask extends AsyncTask<TaskConfig, Void, Void> implement
                         out.newLine();
                         out.flush();
                     } else if(message.equals("PLAY")) {
-                        mPlayer.start();
-                        Log.d("LIVE", "song started");
+                        play();
 
                         Thread.sleep(500);
 
@@ -66,7 +91,7 @@ public class StartClientTask extends AsyncTask<TaskConfig, Void, Void> implement
                         out.flush();
                         mConfig.setStatus("Playing");
                     } else if(message.equals("STOP")) {
-                        mPlayer.pause();
+                        stop();
                         Log.d("LIVE", "song stopped");
                         mConfig.setStatus("Stopped");
                     } else {

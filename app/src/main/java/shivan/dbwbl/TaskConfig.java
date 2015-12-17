@@ -1,6 +1,7 @@
 package shivan.dbwbl;
 
 import android.content.Context;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 /**
@@ -9,10 +10,11 @@ import android.widget.TextView;
 public class TaskConfig {
     private Context mContext;
     private String mServerIP;
-    int mLatency;
+    private int mLatency;
 
     private TextView mStatusTextView;
     private TextView mClientsTextView;
+    private ProgressBar mProgressBar;
 
     public TaskConfig(Context context, String serverIP, int latency) {
         mContext = context;
@@ -21,6 +23,7 @@ public class TaskConfig {
 
         mStatusTextView = (TextView) ((MainActivity) getContext()).findViewById(R.id.statusTextView);
         mClientsTextView = (TextView) ((MainActivity) getContext()).findViewById(R.id.clientsTextView);
+        mProgressBar = (ProgressBar) ((MainActivity) getContext()).findViewById(R.id.progressBar);
     }
 
     public Context getContext() { return mContext; }
@@ -44,5 +47,10 @@ public class TaskConfig {
                 mStatusTextView.setText(status);
             }
         });
+    }
+
+    public void setProgress(int progress, int max) {
+        mProgressBar.setMax(max);
+        mProgressBar.setProgress(progress);
     }
 }

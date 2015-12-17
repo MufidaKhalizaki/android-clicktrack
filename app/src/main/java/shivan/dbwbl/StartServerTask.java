@@ -35,6 +35,23 @@ public class StartServerTask extends AsyncTask<TaskConfig, Void, Void> implement
             mPlayer.start();
             Log.d("LIVE", "song started");
             mConfig.setStatus("Playing");
+
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    while(mPlayer.isPlaying()) {
+                        mConfig.setProgress(mPlayer.getCurrentPosition(), mPlayer.getDuration());
+
+                        try {
+                            Thread.sleep(200);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    Log.d("UI", "run: stop update progress thread");
+                }
+            }).start();
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
